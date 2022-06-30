@@ -1,0 +1,201 @@
+<html>
+<body>
+<script> 
+	var canvas,ctx,sh = 4000,sw = 4000,dt = 1,pp = 100000,c = 10000,ce = 1000,QP = 7,MT = 999999999999,ET = 1000000000,ap = 100,ebb = 0.001,cm =10,G = 6.67*Math.pow(10,-11),TM=0,CMAX=10000000000,EMAX = 1000000000000000000;	
+    const img =new Image();
+    img.src = "";
+	
+	var particle = {
+
+		e: 100,
+		x: sw/2,
+		y: sh/2,
+		r: 100,
+		m: 100,
+		color: "#ffffff",
+		spdx: 0,
+		spdy: 0,
+
+	}
+
+	var universe = []
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	main();
+
+	function main(){
+
+		canvas = document.createElement("canvas");
+		canvas.width = sw;
+		canvas.height = sh;
+		canvas.style.border = "1px solid #000";
+
+		ctx = canvas.getContext("2d");
+		document.body.appendChild(canvas);
+		
+		bigbang(QP);
+		
+	}
+
+	function bigbang (qp){
+
+		while(qp>0){
+
+			let pm = Math.floor(Math.floor((Math.random()*ap))/ap*MT),pe = Math.floor(Math.floor((Math.random()*ap))/ap*ET),pc = Math.floor(Math.floor((Math.random()*ap))/ap*ET*MT);
+			TM+=pm;
+			let part = {
+				e: pe,
+				x: (
+					Math.floor(Math.random()*
+					sw)),
+				y: (
+					Math.floor(Math.random()*
+					sh)),
+				r: 10+(pm*100)/MT,
+				m: pm,
+				color: color(pc),
+				spdx: ((Math.floor(Math.random()*100)/100*2)-1)*ebb,
+				spdy: ((Math.floor(Math.random()*100)/100*2)-1)*ebb,
+			}
+			universe.push(part);
+			qp--;
+		}
+	}
+
+	function color (pc){
+
+		let max = MT,ct = Math.pow(16,6),cor = Math.floor((pc*ct)/(max*CMAX));
+
+		let color =	"";
+
+		if(cor>ct || cor<1000){
+			color = "ffffff";
+		}else{
+			color =	cor.toString(16);
+			while(color.length<6){
+			color+="f";
+			}
+		}
+		
+
+		return "#" + color;
+
+	}
+
+	setInterval(function(){
+
+		update();
+		draw();
+
+	},dt)
+
+	function update (){
+
+		for (var i = 0; i < universe.length; i++) {
+			let ax=0,ay=0;
+			for (var j = 0; j < universe.length; j++) {
+				if(i != j){
+					if((universe[i].x-universe[j].x) != 0 && dist(i,j) != 0){
+						ax+=Math.abs(Math.sin(Math.atan2((universe[i].y-universe[j].y),(universe[i].x-universe[j].x))))*(universe[j].m*G)/Math.pow(dist(i,j),2);
+					}
+					if((universe[i].x-universe[j].x) != 0 && dist(i,j) != 0){
+						ay+=Math.abs(Math.cos(Math.atan2((universe[i].y-universe[j].y),(universe[i].x-universe[j].x))))*(universe[j].m*G)/Math.pow(dist(i,j),2);
+					}
+					if(dist(i,j) < universe[i].r/2+universe[i].r/2){
+					if( universe[i].e+universe[j].e > EMAX){
+						let qp = QP - universe.length;
+						TM = 0;
+						universe.splice(i,1);
+						universe.splice(j,1);
+						bigbang(qp);
+						console.log("bigbangggggggg")
+
+					}else{	
+
+						let part = {
+							e: universe[i].e+universe[j].e,
+							x: universe[i].x,
+							y: universe[i].y,
+							r: Math.sqrt((universe[i].r)*(universe[i].r)+(universe[j].r*universe[j].r)),
+							m: universe[i].m+universe[j].m,
+							color: color(this.m*this.e),
+							spdx: universe[i].spdx+universe[j].spdx,
+							spdy: universe[i].spdy+universe[j].spdy,
+							}
+							universe.splice(i,1);
+							universe.splice(j,1);
+							universe.push(part);
+						}
+						j=0;
+						}
+					
+				}
+				ax*=(universe[i].x>universe[j].x)?-1:1;
+				ay*=(universe[i].y>universe[j].y)?-1:1;
+			}
+			//console.log(ax*cm)
+			universe[i].spdx+=ax*cm;
+			universe[i].spdy+=ay*cm;
+			/*if(universe[i].spdx>100){
+				universe[i].spdx = 100;
+			}
+			if(universe[i].spdy>100){
+				universe[i].spdy = 100;
+			}
+			if(universe[i].spdx<-100){
+				universe[i].spdx = -100;
+			}
+			if(universe[i].spdy<-100){
+				universe[i].spdy = -100;
+			}*/
+		}
+
+		for (var i = universe.length - 1; i >= 0; i--) {
+			universe[i].x+=universe[i].spdx;
+			universe[i].y+=universe[i].spdy;
+			if(universe[i].x<0){
+				universe[i].x+=sh;
+			}
+			if(universe[i].x>sw){
+				universe[i].x%=sw;
+			}
+			if(universe[i].y<0){
+				universe[i].y+=sh;
+			}
+			if(universe[i].y>sh){
+				universe[i].y%=sh;
+			}
+			//universe[i].spdx=universe[i].e/ce*universe[i].spdx;
+			//universe[i].spdy=universe[i].e/ce*universe[i].spdy;
+			//gx+=(universe[i].x-universe[j].x)>0?(universe[j].m/universe[i].m*cm*((universe[j].x-universe[i].x)))/c:0;
+			//gy+=(universe[i].y-universe[j].y)>0?(universe[j].m/universe[i].m*cm*((universe[j].y-universe[i].y)))/c:0;
+		}
+
+	}
+
+  	function draw (){
+
+  		ctx.fillStyle = "#000000";
+  		ctx.fillRect(0,0,sw,sh);
+		
+  		for (var i = 0;i<universe.length;i++){
+  		
+  			let p = universe[i];
+  			
+  			ctx.fillStyle = p.color;
+  			ctx.beginPath();
+  			ctx.arc(p.x,p.y,p.r,0, 2 * Math.PI);
+  			ctx.fill();
+  		}
+  		
+  	}
+
+  	function dist (a,b){
+
+  		return Math.sqrt((universe[a].x-universe[b].x)*(universe[a].x-universe[b].x)+(universe[a].y-universe[b].y)*(universe[a].y-universe[b].y));
+
+  	}
+</script>
+</body>	
+</html>
